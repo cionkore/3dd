@@ -41,14 +41,47 @@
   directionalLight.position.set(5, 10, 7.5);
   scene.add(directionalLight);
 
-  const geometry = new THREE.SphereGeometry(50, 32, 32);
-const material = new THREE.MeshStandardMaterial({ color: 0x1400ff, transparent: true, opacity: 0.5 });
-const sphere = new THREE.Mesh(geometry, material);
+  const loader = new OBJLoader();
+  loader.load(
+    'https://raw.githubusercontent.com/cionkore/1/refs/heads/main/module-1.obj',
+    function (object) {
+      object.scale.set(0.03, 0.03, 0.03);
 
-const pivot = new THREE.Group();
-pivot.add(sphere);
-scene.add(pivot);
-scene.userData.pivot = pivot;
+      const box = new THREE.Box3().setFromObject(object);
+      const center = box.getCenter(new THREE.Vector3());
+      object.position.sub(center);
+
+      object.traverse(child => {
+        if (child.isMesh) {
+          child.material = new THREE.MeshStandardMaterial({
+            color: new THREE.Color(0.078, 0, 1),
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide,
+            depthWrite: false
+          });
+
+          const edges = new THREE.EdgesGeometry(child.geometry, 1);
+          const line = new THREE.LineSegments(
+            edges,
+            new THREE.LineBasicMaterial({
+              color: '#1400ff',
+              linewidth: 1,
+              depthTest: false,
+              transparent: true,
+              opacity: 0.7
+            })
+          );
+          child.add(line);
+        }
+      });
+
+      const pivot = new THREE.Group();
+      pivot.add(object);
+      scene.add(pivot);
+      scene.userData.pivot = pivot;
+    }
+  );
 
   let mouseX = 0, mouseY = 0;
   let isHovering = false;
